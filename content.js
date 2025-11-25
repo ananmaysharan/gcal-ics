@@ -1,26 +1,51 @@
 /**
- * ICS Calendar Drop - Content Script
- * Handles drag and drop of ICS files into Google Calendar
+ * ICS Calendar Drop - Content Script (Material 3)
+ * Handles drag and drop of ICS files into Google Calendar grid
  */
 
 (function() {
   'use strict';
 
   let overlay = null;
+  let importDialog = null;
+  let dialogBackdrop = null;
   let messageToast = null;
   let dragCounter = 0;
+  let calendarMain = null;
+  let parsedEvents = null;
 
   /**
    * Initialize the extension
    */
   function init() {
-    createOverlay();
-    createMessageToast();
-    setupDragAndDropListeners();
+    // Find the calendar main grid
+    findCalendarMain();
+
+    if (calendarMain) {
+      createOverlay();
+      createImportDialog();
+      createMessageToast();
+      setupDragAndDropListeners();
+    } else {
+      // Retry after a delay if calendar hasn't loaded yet
+      setTimeout(init, 1000);
+    }
   }
 
   /**
-   * Create the drop overlay
+   * Find the calendar main grid element
+   */
+  function findCalendarMain() {
+    // Look for the main calendar grid
+    calendarMain = document.querySelector('[role="main"][data-period-type]') ||
+                   document.querySelector('[role="main"].mXmivb') ||
+                   document.querySelector('.mXmivb.ogB5bf');
+
+    return calendarMain;
+  }
+
+  /**
+   * Create the drop overlay (attached to calendar grid)
    */
   function createOverlay() {
     overlay = document.createElement('div');
@@ -37,7 +62,225 @@
         <div class="spinner"></div>
       </div>
     `;
-    document.body.appendChild(overlay);
+
+    // Append to calendar main instead of body
+    if (calendarMain) {
+      // Make sure calendar main has position relative
+      const mainPosition = window.getComputedStyle(calendarMain).position;
+      if (mainPosition === 'static') {
+        calendarMain.style.position = 'relative';
+      }
+      calendarMain.appendChild(overlay);
+    }
+  }
+
+  /**
+   * Create import confirmation dialog
+   */
+  function createImportDialog() {
+    // Backdrop
+    dialogBackdrop = document.createElement('div');
+    dialogBackdrop.className = 'dialog-backdrop';
+    dialogBackdrop.addEventListener('click', hideImportDialog);
+    document.body.appendChild(dialogBackdrop);
+
+    // Dialog
+    importDialog = document.createElement('div');
+    importDialog.id = 'ics-import-dialog';
+    importDialog.innerHTML = `
+      <div class="dialog-header">
+        <h2 class="dialog-title">Import Calendar Events</h2>
+      </div>
+      <div class="dialog-body" id="dialog-events">
+        <!-- Events will be inserted here -->
+      </div>
+      <div class="dialog-actions">
+        <button class="dialog-button text" id="dialog-cancel">Cancel</button>
+        <button class="dialog-button filled" id="dialog-import">Import Events</button>
+      </div>
+    `;
+    document.body.appendChild(importDialog);
+
+    // Event listeners
+    document.getElementById('dialog-cancel').addEventListener('click', hideImportDialog);
+    document.getElementById('dialog-import').addEventListener('click', importEvents);
+  }
+
+  /**
+   * Show import dialog with events
+   */
+  function showImportDialog(events) {
+    parsedEvents = events;
+    const eventsContainer = document.getElementById('dialog-events');
+    eventsContainer.innerHTML = '';
+
+    events.forEach((event, index) => {
+      const eventEl = document.createElement('div');
+      eventEl.className = 'event-item';
+
+      const dateStr = event.startDate ? formatDateForDisplay(event.startDate, event.endDate, event.allDay) : 'No date';
+
+      eventEl.innerHTML = `
+        <div class="event-title">${escapeHtml(event.title || 'Untitled Event')}</div>
+        <div class="event-details">📅 ${dateStr}</div>
+        ${event.location ? `<div class="event-details">📍 ${escapeHtml(event.location)}</div>` : ''}
+        ${event.description ? `<div class="event-details">📝 ${escapeHtml(event.description.substring(0, 100))}${event.description.length > 100 ? '...' : ''}</div>` : ''}
+      `;
+
+      eventsContainer.appendChild(eventEl);
+    });
+
+    dialogBackdrop.classList.add('show');
+    importDialog.classList.add('show');
+  }
+
+  /**
+   * Hide import dialog
+   */
+  function hideImportDialog() {
+    dialogBackdrop.classList.remove('show');
+    importDialog.classList.remove('show');
+    parsedEvents = null;
+  }
+
+  /**
+   * Import events using Google Calendar's import mechanism
+   */
+  async function importEvents() {
+    if (!parsedEvents || parsedEvents.length === 0) return;
+
+    hideImportDialog();
+
+    try {
+      // Create ICS content from parsed events
+      const icsContent = createICSContent(parsedEvents);
+
+      // Create a blob and download
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      // Try to open Google Calendar settings import page
+      const settingsUrl = 'https://calendar.google.com/calendar/u/0/r/settings/export';
+
+      // Show instructions to user
+      showMessage(`Opening import settings. Use the downloaded file to import.`, 'success');
+
+      // Download the file
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'calendar-import.ics';
+      link.click();
+
+      // Clean up
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      // Guide user to import page after a delay
+      setTimeout(() => {
+        if (confirm('File downloaded! Would you like to open Google Calendar settings to import it?')) {
+          window.open('https://calendar.google.com/calendar/u/0/r/settings/export', '_blank');
+        }
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error importing events:', error);
+      showMessage('Error importing events: ' + error.message, 'error');
+    }
+  }
+
+  /**
+   * Create ICS content from events
+   */
+  function createICSContent(events) {
+    let ics = 'BEGIN:VCALENDAR\r\n';
+    ics += 'VERSION:2.0\r\n';
+    ics += 'PRODID:-//ICS Calendar Drop//EN\r\n';
+    ics += 'CALSCALE:GREGORIAN\r\n';
+
+    events.forEach(event => {
+      ics += 'BEGIN:VEVENT\r\n';
+      ics += `DTSTART:${formatDateForICS(event.startDate, event.allDay)}\r\n`;
+      if (event.endDate) {
+        ics += `DTEND:${formatDateForICS(event.endDate, event.allDay)}\r\n`;
+      }
+      ics += `SUMMARY:${escapeICS(event.title || 'Untitled Event')}\r\n`;
+      if (event.description) {
+        ics += `DESCRIPTION:${escapeICS(event.description)}\r\n`;
+      }
+      if (event.location) {
+        ics += `LOCATION:${escapeICS(event.location)}\r\n`;
+      }
+      if (event.uid) {
+        ics += `UID:${event.uid}\r\n`;
+      } else {
+        ics += `UID:${Date.now()}-${Math.random().toString(36)}\r\n`;
+      }
+      ics += 'DTSTAMP:' + formatDateForICS(new Date(), false) + '\r\n';
+      ics += 'END:VEVENT\r\n';
+    });
+
+    ics += 'END:VCALENDAR\r\n';
+    return ics;
+  }
+
+  /**
+   * Format date for ICS
+   */
+  function formatDateForICS(date, allDay) {
+    if (!date) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    if (allDay) {
+      return `${year}${month}${day}`;
+    }
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+  }
+
+  /**
+   * Format date for display
+   */
+  function formatDateForDisplay(startDate, endDate, allDay) {
+    if (!startDate) return 'No date';
+
+    const options = allDay
+      ? { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }
+      : { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+
+    const start = startDate.toLocaleDateString('en-US', options);
+
+    if (endDate && endDate.getTime() !== startDate.getTime()) {
+      const end = endDate.toLocaleDateString('en-US', options);
+      return `${start} → ${end}`;
+    }
+
+    return start;
+  }
+
+  /**
+   * Escape HTML
+   */
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * Escape ICS content
+   */
+  function escapeICS(text) {
+    return text
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, '\\n');
   }
 
   /**
@@ -58,18 +301,20 @@
 
     setTimeout(() => {
       messageToast.classList.remove('show');
-    }, 4000);
+    }, 5000);
   }
 
   /**
-   * Setup drag and drop event listeners
+   * Setup drag and drop event listeners on calendar main
    */
   function setupDragAndDropListeners() {
-    // Prevent default drag behavior
-    document.addEventListener('dragover', handleDragOver, false);
-    document.addEventListener('dragleave', handleDragLeave, false);
-    document.addEventListener('dragenter', handleDragEnter, false);
-    document.addEventListener('drop', handleDrop, false);
+    if (!calendarMain) return;
+
+    // Attach to calendar main only
+    calendarMain.addEventListener('dragover', handleDragOver, false);
+    calendarMain.addEventListener('dragleave', handleDragLeave, false);
+    calendarMain.addEventListener('dragenter', handleDragEnter, false);
+    calendarMain.addEventListener('drop', handleDrop, false);
   }
 
   /**
@@ -77,11 +322,14 @@
    */
   function handleDragEnter(e) {
     e.preventDefault();
+    e.stopPropagation();
     dragCounter++;
 
     // Check if dragged item contains files
     if (e.dataTransfer.types.includes('Files')) {
-      overlay.classList.add('active');
+      if (overlay) {
+        overlay.classList.add('active');
+      }
     }
   }
 
@@ -90,6 +338,7 @@
    */
   function handleDragOver(e) {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
   }
 
@@ -98,10 +347,13 @@
    */
   function handleDragLeave(e) {
     e.preventDefault();
+    e.stopPropagation();
     dragCounter--;
 
     if (dragCounter === 0) {
-      overlay.classList.remove('active');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
     }
   }
 
@@ -120,26 +372,45 @@
     );
 
     if (icsFiles.length === 0) {
-      overlay.classList.remove('active');
-      showMessage('Please drop an ICS file', 'error');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+      showMessage('Please drop an ICS calendar file', 'error');
       return;
     }
 
     // Show processing state
-    overlay.classList.add('processing');
-    updateOverlayText('Processing...', 'Reading your calendar file');
+    if (overlay) {
+      overlay.classList.add('processing');
+      updateOverlayText('Processing...', 'Reading your calendar file');
+    }
 
     try {
+      const allEvents = [];
+
       for (const file of icsFiles) {
-        await processICSFile(file);
+        const events = await processICSFile(file);
+        allEvents.push(...events);
       }
 
-      overlay.classList.remove('active', 'processing');
-      showMessage(`Successfully imported events from ${icsFiles.length} file(s)`, 'success');
+      if (overlay) {
+        overlay.classList.remove('active', 'processing');
+      }
+
+      if (allEvents.length === 0) {
+        showMessage('No events found in the file', 'error');
+        return;
+      }
+
+      // Show import dialog
+      showImportDialog(allEvents);
+
     } catch (error) {
       console.error('Error processing ICS file:', error);
-      overlay.classList.remove('active', 'processing');
-      showMessage('Error importing calendar: ' + error.message, 'error');
+      if (overlay) {
+        overlay.classList.remove('active', 'processing');
+      }
+      showMessage('Error reading calendar file: ' + error.message, 'error');
     }
   }
 
@@ -147,6 +418,7 @@
    * Update overlay text
    */
   function updateOverlayText(title, subtitle) {
+    if (!overlay) return;
     const titleEl = overlay.querySelector('.drop-title');
     const subtitleEl = overlay.querySelector('.drop-subtitle');
     if (titleEl) titleEl.textContent = title;
@@ -160,22 +432,11 @@
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
-      reader.onload = async function(e) {
+      reader.onload = function(e) {
         try {
           const icsContent = e.target.result;
           const events = ICSParser.parse(icsContent);
-
-          if (events.length === 0) {
-            reject(new Error('No events found in the ICS file'));
-            return;
-          }
-
-          updateOverlayText('Adding events...', `Found ${events.length} event(s)`);
-
-          // Add events to Google Calendar
-          await addEventsToCalendar(events);
-
-          resolve();
+          resolve(events);
         } catch (error) {
           reject(error);
         }
@@ -189,184 +450,25 @@
     });
   }
 
-  /**
-   * Add events to Google Calendar
-   * Uses Google Calendar's URL scheme to create events
-   */
-  async function addEventsToCalendar(events) {
-    // For Google Calendar, we'll use the calendar's own import functionality
-    // by simulating the import process or by opening create event dialogs
-
-    // Strategy: Use Google Calendar's quick add or create event interface
-    // This approach opens the event creation dialog for each event
-
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      updateOverlayText('Adding events...', `Processing event ${i + 1} of ${events.length}`);
-
-      // Use Google Calendar's URL scheme to create events
-      await createEventViaURL(event);
-
-      // Add a small delay between events to avoid overwhelming the browser
-      await sleep(500);
-    }
-  }
-
-  /**
-   * Create an event using Google Calendar's URL scheme
-   */
-  function createEventViaURL(event) {
-    return new Promise((resolve) => {
-      const params = new URLSearchParams();
-
-      // Event title
-      params.append('text', event.title || 'Untitled Event');
-
-      // Dates
-      if (event.startDate) {
-        params.append('dates', formatDateForGoogle(event.startDate, event.endDate, event.allDay));
-      }
-
-      // Location
-      if (event.location) {
-        params.append('location', event.location);
-      }
-
-      // Description
-      if (event.description) {
-        params.append('details', event.description);
-      }
-
-      // Recurrence
-      if (event.recurrence) {
-        params.append('recur', formatRecurrenceForGoogle(event.recurrence));
-      }
-
-      // Create the URL and open in a new tab (background)
-      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&${params.toString()}`;
-
-      // For better UX, we'll try to auto-submit the event using DOM manipulation
-      // instead of opening tabs
-      tryAutoCreateEvent(event, url);
-
-      // Resolve after a short delay
-      setTimeout(resolve, 100);
-    });
-  }
-
-  /**
-   * Try to automatically create event using DOM manipulation
-   */
-  function tryAutoCreateEvent(event, fallbackUrl) {
-    // Click the "Create" button if available
-    const createButton = document.querySelector('[data-key="create"]') ||
-                        document.querySelector('[aria-label*="Create"]') ||
-                        document.querySelector('button[aria-label*="Create"]');
-
-    if (createButton) {
-      createButton.click();
-
-      // Wait for dialog to open and fill in details
-      setTimeout(() => {
-        fillEventDialog(event);
-      }, 300);
-    } else {
-      // Fallback: Open in new tab
-      // Note: This will be blocked by popup blockers, so we show a message
-      console.log('Event URL:', fallbackUrl);
-    }
-  }
-
-  /**
-   * Fill the event creation dialog with event details
-   */
-  function fillEventDialog(event) {
-    // Title field
-    const titleInput = document.querySelector('input[aria-label*="Add title"]') ||
-                      document.querySelector('input[placeholder*="Add title"]');
-    if (titleInput && event.title) {
-      titleInput.value = event.title;
-      titleInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    // Try to find and fill other fields
-    setTimeout(() => {
-      // Location
-      if (event.location) {
-        const locationInput = document.querySelector('input[aria-label*="location"]') ||
-                             document.querySelector('input[placeholder*="location"]');
-        if (locationInput) {
-          locationInput.value = event.location;
-          locationInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      }
-
-      // Description
-      if (event.description) {
-        const descInput = document.querySelector('[aria-label*="description"]') ||
-                         document.querySelector('[data-placeholder*="description"]');
-        if (descInput) {
-          descInput.textContent = event.description;
-          descInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      }
-
-      // Auto-save the event
-      setTimeout(() => {
-        const saveButton = document.querySelector('button[aria-label*="Save"]') ||
-                          document.querySelector('button:has-text("Save")');
-        if (saveButton) {
-          saveButton.click();
-        }
-      }, 200);
-    }, 200);
-  }
-
-  /**
-   * Format date for Google Calendar URL
-   */
-  function formatDateForGoogle(startDate, endDate, allDay) {
-    if (!startDate) return '';
-
-    const formatDateTime = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const seconds = String(date.getSeconds()).padStart(2, '0');
-
-      if (allDay) {
-        return `${year}${month}${day}`;
-      }
-      return `${year}${month}${day}T${hours}${minutes}${seconds}`;
-    };
-
-    const start = formatDateTime(startDate);
-    const end = endDate ? formatDateTime(endDate) : start;
-
-    return `${start}/${end}`;
-  }
-
-  /**
-   * Format recurrence rule for Google Calendar
-   */
-  function formatRecurrenceForGoogle(rrule) {
-    // Google Calendar accepts RRULE format
-    return 'RRULE:' + rrule;
-  }
-
-  /**
-   * Sleep utility
-   */
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
+
+  // Re-initialize if calendar navigates to a new view
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+      lastUrl = url;
+      setTimeout(() => {
+        if (!calendarMain || !document.contains(calendarMain)) {
+          init();
+        }
+      }, 1000);
+    }
+  }).observe(document, { subtree: true, childList: true });
+
 })();

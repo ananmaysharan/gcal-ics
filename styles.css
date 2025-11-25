@@ -1,17 +1,18 @@
-/* Material Design Drop Overlay */
+/* Material 3 (Material You) Drop Overlay */
 #ics-drop-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(26, 115, 232, 0.95);
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.92) 0%, rgba(69, 90, 190, 0.92) 100%);
   z-index: 10000;
   display: none;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  backdrop-filter: blur(24px);
+  border-radius: 28px;
+  animation: fadeIn 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 #ics-drop-overlay.active {
@@ -21,9 +22,11 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -37,38 +40,46 @@
 .drop-icon {
   width: 120px;
   height: 120px;
-  margin: 0 auto 24px;
-  background: white;
-  border-radius: 50%;
+  margin: 0 auto 32px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  animation: pulse 2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  animation: pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes pulse {
   0%, 100% {
     transform: scale(1);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 2px 6px 2px rgba(0, 0, 0, 0.15);
   }
   50% {
-    transform: scale(1.05);
+    transform: scale(1.08);
+    box-shadow:
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      0 8px 16px 4px rgba(0, 0, 0, 0.15);
   }
 }
 
 .drop-icon svg {
   width: 64px;
   height: 64px;
-  fill: #1a73e8;
+  fill: #6750A4;
 }
 
 .drop-title {
   font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
-  font-size: 34px;
-  font-weight: 400;
-  margin: 0 0 16px 0;
+  font-size: 36px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
   letter-spacing: 0;
-  line-height: 40px;
+  line-height: 44px;
 }
 
 .drop-subtitle {
@@ -76,13 +87,14 @@
   font-size: 16px;
   font-weight: 400;
   margin: 0;
-  opacity: 0.9;
+  opacity: 0.95;
   line-height: 24px;
+  letter-spacing: 0.15px;
 }
 
 /* Processing State */
 #ics-drop-overlay.processing .drop-content {
-  animation: processing 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  animation: processing 0.4s cubic-bezier(0.2, 0, 0, 1);
 }
 
 @keyframes processing {
@@ -90,7 +102,7 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
 }
 
@@ -98,11 +110,11 @@
   display: none;
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  border: 4px solid rgba(255, 255, 255, 0.2);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 24px auto 0;
+  margin: 32px auto 0;
 }
 
 #ics-drop-overlay.processing .spinner {
@@ -115,24 +127,184 @@
   }
 }
 
-/* Success/Error Messages */
+/* Material 3 Import Dialog */
+#ics-import-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #FFF;
+  border-radius: 28px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  z-index: 10002;
+  display: none;
+  flex-direction: column;
+  max-width: 560px;
+  max-height: 80vh;
+  animation: dialogIn 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+#ics-import-dialog.show {
+  display: flex;
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.dialog-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.dialog-title {
+  font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: #1F1F1F;
+  margin: 0;
+  line-height: 32px;
+}
+
+.dialog-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.event-item {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #F5F5F5;
+  border-radius: 16px;
+  border-left: 4px solid #6750A4;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.event-item:hover {
+  background: #EEEEEE;
+  transform: translateX(4px);
+}
+
+.event-title {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1F1F1F;
+  margin: 0 0 8px 0;
+  line-height: 24px;
+}
+
+.event-details {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 14px;
+  color: #5F6368;
+  margin: 4px 0;
+  line-height: 20px;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #E0E0E0;
+}
+
+.dialog-button {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 20px;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  letter-spacing: 0.1px;
+}
+
+.dialog-button.text {
+  background: transparent;
+  color: #6750A4;
+}
+
+.dialog-button.text:hover {
+  background: rgba(103, 80, 164, 0.08);
+}
+
+.dialog-button.filled {
+  background: #6750A4;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.dialog-button.filled:hover {
+  background: #7965AF;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px 2px rgba(0, 0, 0, 0.15);
+}
+
+.dialog-button.filled:active {
+  transform: scale(0.95);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 10001;
+  display: none;
+  animation: backdropIn 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.dialog-backdrop.show {
+  display: block;
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Material 3 Snackbar (Toast) */
 .message-toast {
   position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: #323232;
-  color: white;
+  background: #313033;
+  color: #F4EFF4;
   padding: 14px 24px;
-  border-radius: 4px;
+  border-radius: 12px;
   font-family: 'Roboto', Arial, sans-serif;
   font-size: 14px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  z-index: 10001;
+  line-height: 20px;
+  letter-spacing: 0.25px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  z-index: 10003;
   display: none;
   align-items: center;
-  gap: 8px;
-  animation: slideUp 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  gap: 12px;
+  animation: snackbarIn 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .message-toast.show {
@@ -140,14 +312,16 @@
 }
 
 .message-toast.success {
-  background: #0d652d;
+  background: #1E4620;
+  color: #C1E8BA;
 }
 
 .message-toast.error {
-  background: #c5221f;
+  background: #601410;
+  color: #F2B8B5;
 }
 
-@keyframes slideUp {
+@keyframes snackbarIn {
   from {
     transform: translateX(-50%) translateY(100px);
     opacity: 0;

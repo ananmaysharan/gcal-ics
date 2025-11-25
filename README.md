@@ -1,14 +1,15 @@
 # ICS Calendar Drop
 
-A Chrome extension that allows you to drag and drop ICS (iCalendar) files directly into Google Calendar for seamless event import. Built with Material Design principles for a native Google Calendar experience.
+A Chrome extension that allows you to drag and drop ICS (iCalendar) files directly into Google Calendar for seamless event import. Built with Material 3 (Material You) design principles for a beautiful, modern experience.
 
 ## Features
 
-- 🎯 **Drag and Drop Interface** - Simply drag any `.ics` or `.ical` file onto your Google Calendar
-- 🎨 **Material Design** - Beautiful overlay UI following Google's Material Design guidelines
-- ⚡ **Fast Import** - Quickly parse and import multiple events from ICS files
+- 🎯 **Drag and Drop Interface** - Simply drag any `.ics` or `.ical` file onto your Google Calendar grid
+- 🎨 **Material 3 Design** - Beautiful overlay and dialogs following Google's latest Material You guidelines
+- ⚡ **Smart Preview** - Review all events in a confirmation dialog before importing
 - 📅 **Full Event Support** - Imports titles, descriptions, locations, dates, and recurrence rules
 - 🔒 **Privacy First** - All processing happens locally in your browser
+- 📍 **Targeted Drop Zone** - Drop overlay only appears over the calendar grid, not the entire screen
 
 ## Installation
 
@@ -52,26 +53,27 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 
 2. **Drag and Drop ICS Files**
    - Obtain an ICS file (from email invites, other calendar apps, etc.)
-   - Drag the ICS file onto your Google Calendar window
-   - A blue overlay will appear with the message "Drop ICS file to import"
+   - Drag the ICS file onto the **calendar grid area** (the week/month view)
+   - A beautiful Material 3 overlay will appear over just the calendar grid
 
-3. **Import Events**
-   - Release the file when the overlay appears
-   - The extension will process the file and add events to your calendar
-   - A success message will appear at the bottom of the screen
+3. **Review Events**
+   - Release the file to show the import dialog
+   - A Material 3 dialog appears with all parsed events
+   - Review event details including titles, dates, locations, and descriptions
 
-4. **Review Events**
-   - The extension will open Google Calendar's event creation dialog for each event
-   - Review and modify events as needed before saving
-   - Events will be added to your default calendar
+4. **Import to Calendar**
+   - Click "Import Events" to proceed
+   - The extension downloads the processed ICS file
+   - Follow the prompt to open Google Calendar's import settings
+   - Use the downloaded file to complete the import
 
 ## How It Works
 
-1. **Drag Detection** - The extension monitors drag events on Google Calendar pages
+1. **Targeted Drop Zone** - The extension monitors drag events only on the calendar grid area
 2. **File Parsing** - When an ICS file is dropped, it's parsed using a custom ICS parser
 3. **Event Extraction** - Events are extracted with all their properties (title, time, location, etc.)
-4. **Calendar Integration** - Events are added using Google Calendar's native interface
-5. **User Confirmation** - Each event opens in the creation dialog for review
+4. **Preview Dialog** - A Material 3 dialog shows all events for review
+5. **Smart Import** - Downloads a clean ICS file and guides you to Google Calendar's import feature
 
 ## Supported ICS Properties
 
@@ -99,13 +101,15 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 - Ensure the ICS file is properly formatted
 
 ### Overlay Not Appearing
+- Make sure you're dragging onto the calendar grid area (week/month view)
 - Try refreshing the page
 - Check that you're dragging a file (not text or links)
 - Verify the extension is active in Chrome's extensions menu
 
-### Multiple Tabs Opening
-- This is expected behavior - each event requires user confirmation
-- You can batch-close tabs after reviewing events
+### Dialog Not Showing
+- Check browser console for errors (F12 → Console)
+- Ensure popups are not blocked in your browser settings
+- Try disabling other calendar extensions that might conflict
 
 ## Development
 
@@ -128,7 +132,7 @@ ics-calendar-drop/
 ### Technologies Used
 - **Manifest V3** - Latest Chrome extension format
 - **Vanilla JavaScript** - No dependencies, pure JS
-- **Material Design** - Google's design system
+- **Material 3 (Material You)** - Google's latest design system with updated colors, typography, and interactions
 - **ICS/iCalendar Parsing** - Custom parser implementation
 
 ### Making Changes
@@ -153,10 +157,10 @@ ics-calendar-drop/
 
 ## Known Limitations
 
-- Events must be reviewed individually (Google Calendar security requirement)
-- No batch import without user confirmation
-- Requires Google Calendar interface to be open
-- Some complex recurrence rules may need manual adjustment
+- Requires one additional step: downloading the ICS file and using Google Calendar's import settings
+- Drop zone is limited to the calendar grid area (by design for better UX)
+- Requires Google Calendar web interface to be open
+- Some complex recurrence rules may need manual adjustment after import
 
 ## Contributing
 
@@ -188,12 +192,13 @@ If you encounter any issues or have questions:
 ## Roadmap
 
 Future improvements planned:
-- [ ] Batch import with single confirmation
+- [ ] Direct import without download step (if Google Calendar API allows)
 - [ ] Support for more ICS properties (VALARM, VTIMEZONE, etc.)
-- [ ] Custom calendar selection
-- [ ] Import progress indicator
-- [ ] Duplicate event detection
-- [ ] Dark mode support
+- [ ] Custom calendar selection in preview dialog
+- [ ] Duplicate event detection and merging
+- [ ] Dark mode support for dialog
+- [ ] Event editing before import
+- [ ] Export selected events back to ICS
 
 ---
 
