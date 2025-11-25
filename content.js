@@ -1,6 +1,6 @@
 /**
  * ICS Calendar Drop - Content Script (Material 3)
- * Handles drag and drop of ICS files into Google Calendar grid
+ * Handles drag and drop of ICS files into Google Calendar
  */
 
 (function() {
@@ -86,7 +86,7 @@
     const eventsContainer = document.getElementById('dialog-events');
     eventsContainer.innerHTML = '';
 
-    events.forEach((event, index) => {
+    events.forEach((event) => {
       const eventEl = document.createElement('div');
       eventEl.className = 'event-item';
 
@@ -116,103 +116,44 @@
   }
 
   /**
-   * Import events using Google Calendar's import mechanism
+   * Import events using Google Calendar API via background script
    */
   async function importEvents() {
     if (!parsedEvents || parsedEvents.length === 0) return;
 
+    const events = parsedEvents;
     hideImportDialog();
 
+    // Show importing message
+    showMessage(`Importing ${events.length} event(s)...`, 'success');
+
     try {
-      // Create ICS content from parsed events
-      const icsContent = createICSContent(parsedEvents);
+      // Send to background script
+      chrome.runtime.sendMessage(
+        { action: "importEvents", events },
+        (response) => {
+          if (!response) {
+            showMessage('No response from extension. Please check permissions.', 'error');
+            return;
+          }
 
-      // Create a blob and download
-      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-
-      // Try to open Google Calendar settings import page
-      const settingsUrl = 'https://calendar.google.com/calendar/u/0/r/settings/export';
-
-      // Show instructions to user
-      showMessage(`Opening import settings. Use the downloaded file to import.`, 'success');
-
-      // Download the file
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'calendar-import.ics';
-      link.click();
-
-      // Clean up
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      // Guide user to import page after a delay
-      setTimeout(() => {
-        if (confirm('File downloaded! Would you like to open Google Calendar settings to import it?')) {
-          window.open('https://calendar.google.com/calendar/u/0/r/settings/export', '_blank');
+          if (response.success) {
+            showMessage(`✓ Successfully imported ${response.imported} event(s)!`, 'success');
+            // Refresh calendar page after a delay
+            setTimeout(() => location.reload(), 2000);
+          } else {
+            if (response.imported > 0) {
+              showMessage(`Imported ${response.imported} of ${response.total} events. Some failed.`, 'error');
+            } else {
+              showMessage(`Import failed: ${response.error || 'Unknown error'}`, 'error');
+            }
+          }
         }
-      }, 1500);
-
+      );
     } catch (error) {
       console.error('Error importing events:', error);
       showMessage('Error importing events: ' + error.message, 'error');
     }
-  }
-
-  /**
-   * Create ICS content from events
-   */
-  function createICSContent(events) {
-    let ics = 'BEGIN:VCALENDAR\r\n';
-    ics += 'VERSION:2.0\r\n';
-    ics += 'PRODID:-//ICS Calendar Drop//EN\r\n';
-    ics += 'CALSCALE:GREGORIAN\r\n';
-
-    events.forEach(event => {
-      ics += 'BEGIN:VEVENT\r\n';
-      ics += `DTSTART:${formatDateForICS(event.startDate, event.allDay)}\r\n`;
-      if (event.endDate) {
-        ics += `DTEND:${formatDateForICS(event.endDate, event.allDay)}\r\n`;
-      }
-      ics += `SUMMARY:${escapeICS(event.title || 'Untitled Event')}\r\n`;
-      if (event.description) {
-        ics += `DESCRIPTION:${escapeICS(event.description)}\r\n`;
-      }
-      if (event.location) {
-        ics += `LOCATION:${escapeICS(event.location)}\r\n`;
-      }
-      if (event.uid) {
-        ics += `UID:${event.uid}\r\n`;
-      } else {
-        ics += `UID:${Date.now()}-${Math.random().toString(36)}\r\n`;
-      }
-      ics += 'DTSTAMP:' + formatDateForICS(new Date(), false) + '\r\n';
-      ics += 'END:VEVENT\r\n';
-    });
-
-    ics += 'END:VCALENDAR\r\n';
-    return ics;
-  }
-
-  /**
-   * Format date for ICS
-   */
-  function formatDateForICS(date, allDay) {
-    if (!date) return '';
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    if (allDay) {
-      return `${year}${month}${day}`;
-    }
-
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    return `${year}${month}${day}T${hours}${minutes}${seconds}`;
   }
 
   /**
@@ -225,10 +166,10 @@
       ? { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }
       : { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
 
-    const start = startDate.toLocaleDateString('en-US', options);
+    const start = new Date(startDate).toLocaleDateString('en-US', options);
 
-    if (endDate && endDate.getTime() !== startDate.getTime()) {
-      const end = endDate.toLocaleDateString('en-US', options);
+    if (endDate && new Date(endDate).getTime() !== new Date(startDate).getTime()) {
+      const end = new Date(endDate).toLocaleDateString('en-US', options);
       return `${start} → ${end}`;
     }
 
@@ -242,17 +183,6 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-  }
-
-  /**
-   * Escape ICS content
-   */
-  function escapeICS(text) {
-    return text
-      .replace(/\\/g, '\\\\')
-      .replace(/;/g, '\\;')
-      .replace(/,/g, '\\,')
-      .replace(/\n/g, '\\n');
   }
 
   /**

@@ -25,15 +25,36 @@ A Chrome extension that allows you to drag and drop ICS (iCalendar) files direct
    - Click the download buttons to generate `icon16.png`, `icon48.png`, and `icon128.png`
    - Save all three files in the `icons/` directory
 
-3. **Load Extension in Chrome**
+3. **Set Up Google OAuth** (Required for API access)
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the Google Calendar API:
+     - Navigate to "APIs & Services" > "Library"
+     - Search for "Google Calendar API" and click "Enable"
+   - Create OAuth 2.0 credentials:
+     - Go to "APIs & Services" > "Credentials"
+     - Click "Create Credentials" > "OAuth client ID"
+     - Select "Chrome extension" as the application type
+     - Add your extension ID (you'll get this after loading the extension)
+   - Copy your Client ID
+   - Open `manifest.json` and replace `YOUR_CLIENT_ID.apps.googleusercontent.com` with your actual Client ID
+
+4. **Load Extension in Chrome**
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable "Developer mode" (toggle in top-right corner)
    - Click "Load unpacked"
    - Select the `ics-calendar-drop` directory
+   - Copy the Extension ID shown on the extension card
 
-4. **Verify Installation**
+5. **Update OAuth Credentials** (If not done in step 3)
+   - Go back to Google Cloud Console > Credentials
+   - Edit your OAuth client ID and add the Extension ID from step 4
+   - Save the changes
+
+6. **Verify Installation**
    - You should see "ICS Calendar Drop" in your extensions list
    - The extension will automatically activate on Google Calendar
+   - On first use, you'll be prompted to authorize the extension to access your Google Calendar
 
 ### Option 2: Alternative Icon Generation
 
@@ -62,9 +83,9 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 
 4. **Import to Calendar**
    - Click "Import Events" to proceed
-   - The extension downloads the processed ICS file
-   - Follow the prompt to open Google Calendar's import settings
-   - Use the downloaded file to complete the import
+   - The extension will use Google Calendar API to directly import events
+   - You'll see a success message when import is complete
+   - The page will refresh automatically to show your new events
 
 ## How It Works
 
@@ -72,7 +93,8 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 2. **File Parsing** - When an ICS file is dropped, it's parsed using a custom ICS parser
 3. **Event Extraction** - Events are extracted with all their properties (title, time, location, etc.)
 4. **Preview Dialog** - A Material 3 dialog shows all events for review
-5. **Smart Import** - Downloads a clean ICS file and guides you to Google Calendar's import feature
+5. **Direct API Import** - Uses Google Calendar API via OAuth to directly create events in your calendar
+6. **Background Processing** - A service worker handles authentication and API calls securely
 
 ## Supported ICS Properties
 
@@ -116,23 +138,26 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 ```
 ics-calendar-drop/
 ├── manifest.json          # Extension configuration
-├── content.js            # Main content script
-├── ics-parser.js         # ICS file parser
-├── styles.css            # Material Design styles
-├── icons/                # Extension icons
+├── background.js          # Service worker for API calls
+├── content.js             # Main content script
+├── ics-parser.js          # ICS file parser
+├── styles.css             # Material 3 styles
+├── icons/                 # Extension icons
 │   ├── icon16.png
 │   ├── icon48.png
 │   ├── icon128.png
 │   ├── icon.svg
 │   └── generate-icons.html
-└── README.md            # This file
+└── README.md              # This file
 ```
 
 ### Technologies Used
 - **Manifest V3** - Latest Chrome extension format
 - **Vanilla JavaScript** - No dependencies, pure JS
+- **Google Calendar API** - Direct integration via OAuth 2.0
 - **Material 3 (Material You)** - Google's latest design system with updated colors, typography, and interactions
 - **ICS/iCalendar Parsing** - Custom parser implementation
+- **Service Workers** - Background processing for API calls
 
 ### Making Changes
 1. Edit the source files
@@ -156,9 +181,10 @@ ics-calendar-drop/
 
 ## Known Limitations
 
-- Requires one additional step: downloading the ICS file and using Google Calendar's import settings
+- Requires OAuth setup with Google Cloud Console (one-time configuration)
 - Requires Google Calendar web interface to be open
 - Some complex recurrence rules may need manual adjustment after import
+- Extension must be authorized on first use
 
 ## Contributing
 
@@ -190,13 +216,15 @@ If you encounter any issues or have questions:
 ## Roadmap
 
 Future improvements planned:
-- [ ] Direct import without download step (if Google Calendar API allows)
+- [x] Direct import using Google Calendar API
 - [ ] Support for more ICS properties (VALARM, VTIMEZONE, etc.)
 - [ ] Custom calendar selection in preview dialog
 - [ ] Duplicate event detection and merging
 - [ ] Dark mode support for dialog
 - [ ] Event editing before import
 - [ ] Export selected events back to ICS
+- [ ] Batch processing optimization for large ICS files
+- [ ] Retry failed imports automatically
 
 ---
 
