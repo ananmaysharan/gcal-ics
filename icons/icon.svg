@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background circle with Google Calendar blue -->
+  <circle cx="64" cy="64" r="60" fill="#1a73e8"/>
+
+  <!-- Calendar icon -->
+  <rect x="32" y="36" width="64" height="56" rx="4" fill="white"/>
+  <rect x="32" y="36" width="64" height="16" rx="4" fill="#0d652d"/>
+  <rect x="32" y="48" width="64" height="4" fill="white"/>
+
+  <!-- Calendar grid -->
+  <circle cx="44" cy="62" r="3" fill="#1a73e8"/>
+  <circle cx="56" cy="62" r="3" fill="#1a73e8"/>
+  <circle cx="68" cy="62" r="3" fill="#1a73e8"/>
+  <circle cx="80" cy="62" r="3" fill="#1a73e8"/>
+
+  <circle cx="44" cy="74" r="3" fill="#1a73e8"/>
+  <circle cx="56" cy="74" r="3" fill="#1a73e8"/>
+  <circle cx="68" cy="74" r="3" fill="#1a73e8"/>
+  <circle cx="80" cy="74" r="3" fill="#1a73e8"/>
+
+  <!-- Download/Import arrow -->
+  <g transform="translate(64, 82)">
+    <circle r="14" fill="#0d652d"/>
+    <path d="M -4 -2 L 4 -2 L 4 -6 L 8 0 L 0 8 L -8 0 L -4 -6 Z" fill="white"/>
+  </g>
+</svg>
