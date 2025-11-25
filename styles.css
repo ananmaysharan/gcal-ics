@@ -1,6 +1,6 @@
 /* Material 3 (Material You) Drop Overlay */
 #ics-drop-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -11,7 +11,6 @@
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(24px);
-  border-radius: 28px;
   animation: fadeIn 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 

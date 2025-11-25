@@ -11,41 +11,20 @@
   let dialogBackdrop = null;
   let messageToast = null;
   let dragCounter = 0;
-  let calendarMain = null;
   let parsedEvents = null;
 
   /**
    * Initialize the extension
    */
   function init() {
-    // Find the calendar main grid
-    findCalendarMain();
-
-    if (calendarMain) {
-      createOverlay();
-      createImportDialog();
-      createMessageToast();
-      setupDragAndDropListeners();
-    } else {
-      // Retry after a delay if calendar hasn't loaded yet
-      setTimeout(init, 1000);
-    }
+    createOverlay();
+    createImportDialog();
+    createMessageToast();
+    setupDragAndDropListeners();
   }
 
   /**
-   * Find the calendar main grid element
-   */
-  function findCalendarMain() {
-    // Look for the main calendar grid
-    calendarMain = document.querySelector('[role="main"][data-period-type]') ||
-                   document.querySelector('[role="main"].mXmivb') ||
-                   document.querySelector('.mXmivb.ogB5bf');
-
-    return calendarMain;
-  }
-
-  /**
-   * Create the drop overlay (attached to calendar grid)
+   * Create the drop overlay (full screen)
    */
   function createOverlay() {
     overlay = document.createElement('div');
@@ -63,15 +42,8 @@
       </div>
     `;
 
-    // Append to calendar main instead of body
-    if (calendarMain) {
-      // Make sure calendar main has position relative
-      const mainPosition = window.getComputedStyle(calendarMain).position;
-      if (mainPosition === 'static') {
-        calendarMain.style.position = 'relative';
-      }
-      calendarMain.appendChild(overlay);
-    }
+    // Append to body for full screen coverage
+    document.body.appendChild(overlay);
   }
 
   /**
@@ -305,16 +277,14 @@
   }
 
   /**
-   * Setup drag and drop event listeners on calendar main
+   * Setup drag and drop event listeners on document
    */
   function setupDragAndDropListeners() {
-    if (!calendarMain) return;
-
-    // Attach to calendar main only
-    calendarMain.addEventListener('dragover', handleDragOver, false);
-    calendarMain.addEventListener('dragleave', handleDragLeave, false);
-    calendarMain.addEventListener('dragenter', handleDragEnter, false);
-    calendarMain.addEventListener('drop', handleDrop, false);
+    // Attach to document for full screen drag and drop
+    document.addEventListener('dragover', handleDragOver, false);
+    document.addEventListener('dragleave', handleDragLeave, false);
+    document.addEventListener('dragenter', handleDragEnter, false);
+    document.addEventListener('drop', handleDrop, false);
   }
 
   /**
@@ -457,14 +427,14 @@
     init();
   }
 
-  // Re-initialize if calendar navigates to a new view
+  // Re-initialize if overlay gets removed from DOM
   let lastUrl = location.href;
   new MutationObserver(() => {
     const url = location.href;
     if (url !== lastUrl) {
       lastUrl = url;
       setTimeout(() => {
-        if (!calendarMain || !document.contains(calendarMain)) {
+        if (overlay && !document.contains(overlay)) {
           init();
         }
       }, 1000);
