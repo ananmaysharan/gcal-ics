@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Generator</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+    button {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #1557b0;
+    }
+  </style>
+</head>
+<body>
+  <h1>ICS Calendar Drop - Icon Generator</h1>
+  <p>Click the buttons below to download the icons in different sizes:</p>
+
+  <div>
+    <canvas id="canvas16" width="16" height="16"></canvas>
+    <canvas id="canvas48" width="48" height="48"></canvas>
+    <canvas id="canvas128" width="128" height="128"></canvas>
+  </div>
+
+  <div>
+    <button onclick="downloadIcon(16)">Download 16x16</button>
+    <button onclick="downloadIcon(48)">Download 48x48</button>
+    <button onclick="downloadIcon(128)">Download 128x128</button>
+  </div>
+
+  <script>
+    function drawIcon(canvas) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      const center = size / 2;
+      const scale = size / 128;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+
+      // Background circle
+      ctx.fillStyle = '#1a73e8';
+      ctx.beginPath();
+      ctx.arc(center, center, 60 * scale, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Calendar background
+      ctx.fillStyle = 'white';
+      roundRect(ctx, 32 * scale, 36 * scale, 64 * scale, 56 * scale, 4 * scale);
+
+      // Calendar header
+      ctx.fillStyle = '#0d652d';
+      roundRect(ctx, 32 * scale, 36 * scale, 64 * scale, 16 * scale, 4 * scale);
+
+      // Calendar header line
+      ctx.fillStyle = 'white';
+      ctx.fillRect(32 * scale, 48 * scale, 64 * scale, 4 * scale);
+
+      // Calendar dots
+      ctx.fillStyle = '#1a73e8';
+      const dots = [
+        [44, 62], [56, 62], [68, 62], [80, 62],
+        [44, 74], [56, 74], [68, 74], [80, 74]
+      ];
+      dots.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x * scale, y * scale, 3 * scale, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Import arrow circle
+      ctx.fillStyle = '#0d652d';
+      ctx.beginPath();
+      ctx.arc(64 * scale, 82 * scale, 14 * scale, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Import arrow
+      ctx.fillStyle = 'white';
+      ctx.save();
+      ctx.translate(64 * scale, 82 * scale);
+      ctx.scale(scale, scale);
+      ctx.beginPath();
+      ctx.moveTo(-4, -2);
+      ctx.lineTo(4, -2);
+      ctx.lineTo(4, -6);
+      ctx.lineTo(8, 0);
+      ctx.lineTo(0, 8);
+      ctx.lineTo(-8, 0);
+      ctx.lineTo(-4, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function downloadIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const link = document.createElement('a');
+      link.download = `icon${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Draw icons on page load
+    window.addEventListener('load', () => {
+      drawIcon(document.getElementById('canvas16'));
+      drawIcon(document.getElementById('canvas48'));
+      drawIcon(document.getElementById('canvas128'));
+    });
+  </script>
+</body>
+</html>
