@@ -4,12 +4,11 @@ A Chrome extension that allows you to drag and drop ICS (iCalendar) files direct
 
 ## Features
 
-- 🎯 **Drag and Drop Interface** - Simply drag any `.ics` or `.ical` file onto your Google Calendar grid
-- 🎨 **Material 3 Design** - Beautiful overlay and dialogs following Google's latest Material You guidelines
+- 🎯 **Drag and Drop Interface** - Simply drag any `.ics` or `.ical` file anywhere on Google Calendar
+- 🎨 **Material 3 Design** - Beautiful full-screen overlay and dialogs following Google's latest Material You guidelines
 - ⚡ **Smart Preview** - Review all events in a confirmation dialog before importing
 - 📅 **Full Event Support** - Imports titles, descriptions, locations, dates, and recurrence rules
 - 🔒 **Privacy First** - All processing happens locally in your browser
-- 📍 **Targeted Drop Zone** - Drop overlay only appears over the calendar grid, not the entire screen
 
 ## Installation
 
@@ -53,8 +52,8 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 
 2. **Drag and Drop ICS Files**
    - Obtain an ICS file (from email invites, other calendar apps, etc.)
-   - Drag the ICS file onto the **calendar grid area** (the week/month view)
-   - A beautiful Material 3 overlay will appear over just the calendar grid
+   - Drag the ICS file anywhere on the Google Calendar page
+   - A beautiful Material 3 full-screen overlay will appear
 
 3. **Review Events**
    - Release the file to show the import dialog
@@ -69,7 +68,7 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 
 ## How It Works
 
-1. **Targeted Drop Zone** - The extension monitors drag events only on the calendar grid area
+1. **Full-Screen Drop Zone** - The extension monitors drag events across the entire Google Calendar page
 2. **File Parsing** - When an ICS file is dropped, it's parsed using a custom ICS parser
 3. **Event Extraction** - Events are extracted with all their properties (title, time, location, etc.)
 4. **Preview Dialog** - A Material 3 dialog shows all events for review
@@ -101,10 +100,10 @@ You can also convert the included `icons/icon.svg` to PNG using an online tool o
 - Ensure the ICS file is properly formatted
 
 ### Overlay Not Appearing
-- Make sure you're dragging onto the calendar grid area (week/month view)
 - Try refreshing the page
 - Check that you're dragging a file (not text or links)
 - Verify the extension is active in Chrome's extensions menu
+- Check browser console for errors (F12 → Console)
 
 ### Dialog Not Showing
 - Check browser console for errors (F12 → Console)
@@ -158,7 +157,6 @@ ics-calendar-drop/
 ## Known Limitations
 
 - Requires one additional step: downloading the ICS file and using Google Calendar's import settings
-- Drop zone is limited to the calendar grid area (by design for better UX)
 - Requires Google Calendar web interface to be open
 - Some complex recurrence rules may need manual adjustment after import
 
